@@ -1,0 +1,33 @@
+<?php
+
+namespace cigoadmin\model;
+
+use cigoadmin\library\traites\Common;
+use think\Model;
+
+class Files extends Model
+{
+    protected $table = 'cg_files';
+    use Common;
+
+    protected $auto = [];
+    protected $insert = ['status' => 1, 'create_ip' => 0];
+    protected $update = [];
+    protected $append = ['url', 'url_thumb_small', 'url_thumb_middle'];
+
+    public function getUrlAttr($value, $data)
+    {
+        return $this->getUploadFileUrl(trim($data['path'], '.'));
+    }
+
+    public function getUrlThumbSmallAttr($value, $data)
+    {
+        return $this->getUploadFileUrl(trim($data['thumb_small'], '.'));
+    }
+
+    public function getUrlThumbMiddleAttr($value, $data)
+    {
+        return $this->getUploadFileUrl(trim($data['thumb_middle'], '.'));
+    }
+
+}
