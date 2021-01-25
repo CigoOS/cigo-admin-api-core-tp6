@@ -27,8 +27,8 @@ class CtrlContent extends ApiBaseValidate
     {
         parent::__construct();
 
-        $this->rule['content_type'] = 'require|in:' . env('cigo_admin.ctrl_content_types');
-        $this->rule['reason'] = 'requireIf:ctrlType,report|in:' . env('cigo_admin.report_reason_types');
+        $this->rule['content_type'] = 'require|in:' . env('cigo-admin.ctrl-content-types');
+        $this->rule['reason'] = 'requireIf:ctrlType,report|in:' . env('cigo-admin.report-reason-types');
     }
 
     /**

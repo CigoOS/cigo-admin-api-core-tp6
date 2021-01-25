@@ -1,128 +1,71 @@
 <?php
 
-// namespace cigoadmin\command;
+namespace cigoadmin\command;
 
-// use think\console\Command;
-// use think\console\Input;
-// use think\console\Output;
+use cigoadmin\library\utils\Command as UtilsCommand;
+use Inhere\Console\Util\Interact;
+use think\console\Command;
+use think\console\Input;
+use think\console\Output;
 
-// /**
-//  * cigoadmin 初始化命令类
-//  */
-// class Init extends Command
-// {
-//     protected $config = [];
-//     protected $configPath = "./config/";
-//     protected $vendorPath = "./vendor/";
+/**
+ * cigoadmin 初始化命令类
+ */
+class Init extends Command
+{
+    public function configure()
+    {
+        $this->setName('cigoadmin:init')->setDescription('项目工程的必要初始化工作');
+    }
 
-//     public function configure()
-//     {
-//         $this->setName('cigoadmin:init')->setDescription('创建一个后台接口示例项目，并进行相应项目配置，请参考文档说明');
-//     }
+    public function execute(Input $input, Output $output)
+    {
+        $this->chmodPath($input, $output);
+        $this->initEnv($input, $output);
 
-//     public function execute(Input $input, Output $output)
-//     {
+        $output->info(PHP_EOL . '恭喜：项目初始化完成，继续安装操作吧~~');
+        UtilsCommand::output($output, PHP_EOL . "安装命令如下：", 'comment');
+        UtilsCommand::output($output, 'php think cigoadmin:init' . PHP_EOL);
+    }
 
-//         $output->info('');
-//         $output->info('---------------------------');
-//         $output->info('开始配置cigoadmin项目....');
-//         $output->info('');
-//         // ============================== 应用目录 ==================================
-//         // 处理index应用目录
-//         $this->ctrlPath(
-//             $output,
-//             '处理index应用目录',
-//             $this->vendorPath . 'cigoos/cigo-admin-api-tp6/assets/init/app/index',
-//             './app/index'
-//         );
-//         // 处理api_admin应用目录
-//         $this->ctrlPath(
-//             $output,
-//             'api_admin应用目录',
-//             $this->vendorPath . 'cigoos/cigo-admin-api-tp6/assets/init/app/api_admin',
-//             './app/api_admin'
-//         );
+    private function chmodPath(Input $input, Output $output)
+    {
+        $output->info(PHP_EOL . '---------------------------');
+        $output->info('* 检查目录并赋权限：');
 
-//         // ============================== 项目配置 ==================================
-//         // app配置文件
-//         $this->ctrlFile(
-//             $output,
-//             '主配置文件app.php',
-//             $this->vendorPath . 'cigoos/cigo-admin-api-tp6/assets/init/config/app.php',
-//             $this->configPath . 'app.php'
-//         );
-//         // cigoadmin配置文件
-//         $this->ctrlFile(
-//             $output,
-//             '配置文件cigoadmin.php',
-//             $this->vendorPath . 'cigoos/cigo-admin-api-tp6/assets/init/config/cigoadmin.php',
-//             $this->configPath . 'cigoadmin.php'
-//         );
+        //运行时目录
+        $runtimePathExit = file_exists('./runtime');
+        $runtimePathExit && shell_exec('chmod -R 777 ./runtime');
+        $log = './runtime          :******: 0777 (' . ($runtimePathExit ? '完成)     √' : '不存在)   !');
+        UtilsCommand::output($output, $log, $runtimePathExit ? 'info' : 'comment');
 
-//         // ============================== 环境配置 ==================================
-//         $this->ctrlFile(
-//             $output,
-//             '环境配置.env',
-//             $this->vendorPath . 'cigoos/cigo-admin-api-tp6/assets/init/config/.env',
-//             './.env'
-//         );
+        //本地上传目录
+        $uploadPathExit = file_exists('./public/upload');
+        $uploadPathExit && shell_exec('chmod -R 777 ./public/upload');
+        $log = './public/upload    :******: 0777 (' . ($uploadPathExit ? '完成)    √' : '不存在)   !');
+        UtilsCommand::output($output, $log, $uploadPathExit ? 'info' : 'comment');
 
-//         // ============================== 数据库文件拷贝 ==================================
-//         $this->ctrlFile(
-//             $output,
-//             '数据库文件',
-//             $this->vendorPath . 'cigoos/cigo-admin-api-tp6/assets/sql/cigoadmin.sql',
-//             './sql/cigoadmin.sql'
-//         );
-//         $output->info('*：请配置数据库字符集为 utf8mb4');
-//         $output->info('*：请配置数据库排序规则配置为 utf8mb4_general_ci');
-//         $output->info('');
+        $output->info(PHP_EOL . '目录赋权完成');
+    }
 
-//         $output->info('---------------------------');
-//         $output->info('');
-//         $output->info('恭喜你，开心的撸代码吧~');
-//         $output->info('');
+    private function initEnv(Input $input, Output $output)
+    {
+        $output->info(PHP_EOL . '---------------------------');
+        $output->info('* 初始化 .env 配置文件：');
 
-//         return;
-//     }
-
-//     private function ctrlPath(Output $output, $type = '', $srcPath  = '', $desPath = '')
-//     {
-//         $output->info('处理' . $type . '目录...');
-//         if (file_exists($desPath)) {
-//             $output->info('目录已存在');
-//             $bakPath = $desPath . '-bak-' . time();
-//             exec('mv ' . $desPath . ' ' . $bakPath);
-//             $output->info('已备份至：' . $bakPath);
-//         }
-
-//         exec('cp -r ' . $srcPath . ' ' . $desPath);
-//         $output->info('处理完成');
-//         $output->info('');
-//     }
-
-//     private function ctrlFile(Output $output, $type = '', $srcPathFile = '', $desPathFile = '')
-//     {
-//         $output->info('开始处理 ' . $type . ' ...');
-
-//         $path = pathinfo($desPathFile, PATHINFO_DIRNAME);
-//         $desFileName = pathinfo($desPathFile, PATHINFO_FILENAME);
-//         $ext = pathinfo($desPathFile, PATHINFO_EXTENSION);
-
-//         if (!is_dir($path)) {
-//             mkdir($path, 0777, true);
-//         }
-
-//         if (file_exists($desPathFile)) {
-//             $output->info($type . ' 已存在');
-//             $bakFile = $path . '/' . $desFileName . '-bak-' . time() . '.' . $ext;
-//             $fileContent = file_get_contents($desPathFile);
-//             file_put_contents($bakFile, $fileContent);
-//             $output->info('已备份至：' . $bakFile);
-//         }
-//         $fileContent = file_get_contents($srcPathFile);
-//         file_put_contents($desPathFile, $fileContent);
-//         $output->info('处理完毕');
-//         $output->info('');
-//     }
-// }
+        $envFile = "./.env";
+        if (file_exists($envFile)) {
+            $confirm = Interact::readln('.env文件已存在，确认删除吗? (y/n)[默认:no]: ');
+            if (in_array($confirm, ['Y', 'y', 'yes'])) {
+                unlink($envFile);
+                $output->info('.env 配置文件已成功删除');
+                return;
+            } else {
+                UtilsCommand::output($output, '.env 配置文件未删除，请手动删除后再执行后续install操作', 'warning');
+                UtilsCommand::output($output, PHP_EOL . '初始化操作终止!!', 'highlight');
+                exit(0);
+            }
+        }
+        $output->info('.env 配置文件完成初始化');
+    }
+}

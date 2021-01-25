@@ -32,7 +32,7 @@ trait CheckArgs
      */
     protected function checkTimeStamp()
     {
-        if (!env('cigo_admin.check_timestamp', true)) {
+        if (!env('cigo-admin.check-timestamp', true)) {
             return;
         }
 
@@ -60,7 +60,7 @@ trait CheckArgs
      */
     protected function checkSign()
     {
-        if (!env('cigo_admin.check_sign', true)) {
+        if (!env('cigo-admin.check-sign', true)) {
             return;
         }
 

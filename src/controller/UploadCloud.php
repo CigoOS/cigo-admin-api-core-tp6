@@ -33,9 +33,9 @@ trait UploadCloud
 
         if (!in_array(
             $this->args['bucket'], [
-            env('qiniu_cloud.cdn_bucket_open', ''),
-            env('qiniu_cloud.cdn_bucket_img', ''),
-            env('qiniu_cloud.cdn_bucket_img', ''),
+            env('qiniu-cloud.cdn-bucket-open', ''),
+            env('qiniu-cloud.cdn-bucket-img', ''),
+            env('qiniu-cloud.cdn-bucket-img', ''),
         ])) {
             return $this->makeApiReturn('存储空间不存在', [], ErrorCode::ClientError_ArgsWrong, HttpReponseCode::ClientError_BadRequest);
         }
@@ -67,11 +67,11 @@ trait UploadCloud
     {
         empty($bucket) ? '' : false;
         $bucketDomain = array_search($bucket, [
-            'cdn_open_domain' => env('qiniu_cloud.cdn_bucket_open', 'cdn_open_domain'),
-            'cdn_img_domain' => env('qiniu_cloud.cdn_bucket_img', 'cdn_img_domain'),
-            'cdn_video_domain' => env('qiniu_cloud.cdn_bucket_img', 'cdn_video_domain'),
+            'cdn_open_domain' => env('qiniu-cloud.cdn-bucket-open', 'cdn_open_domain'),
+            'cdn_img_domain' => env('qiniu-cloud.cdn-bucket-img', 'cdn_img_domain'),
+            'cdn_video_domain' => env('qiniu-cloud.cdn-bucket-img', 'cdn_video_domain'),
         ]);
-        return Request::scheme().'://'. env('qiniu_cloud.' . $bucketDomain, $bucketDomain);
+        return Request::scheme().'://'. env('qiniu-cloud.' . $bucketDomain, $bucketDomain);
     }
 
     /**

@@ -1,5 +1,6 @@
 <?php
-declare (strict_types=1);
+
+declare(strict_types=1);
 
 namespace cigoadmin\library\traites;
 
@@ -65,11 +66,9 @@ trait Common
                 break;
             default:
                 //TODO byzim
-                $path = Request::scheme() . "://" . (
-                    $isCdn
-                        ? Env::get('server.app_cdn_domain')
-                        : Env::get('server.app_domain')
-                    ) . $path;
+                $path = Request::scheme() . "://" . ($isCdn
+                    ? Env::get('server.app-cdn-domain')
+                    : Env::get('server.app-domain')) . $path;
                 break;
         }
         return $path;

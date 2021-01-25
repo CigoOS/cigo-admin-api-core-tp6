@@ -14,7 +14,6 @@
   ],
   "homepage": "https://www.cigoadmin.com",
   "description": "西谷后台-后端接口核心库:thinkphp-v6版本",
-  "minimum-stability": "dev",
   "require": {
     "alibabacloud/client": "^1.5",
     "ext-json": "^7.4",
@@ -28,7 +27,8 @@
     "topthink/think-orm": "^2.0",
     "topthink/think-image": "^1.0",
     "topthink/think-view": "^1.0",
-    "yansongda/pay": "^2.9"
+    "yansongda/pay": "^2.9",
+    "inhere/console": "^3.1"
   },
   "require-dev": {
     "symfony/var-dumper": "^5.2",
