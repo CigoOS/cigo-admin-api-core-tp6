@@ -30,4 +30,10 @@ class  Command
                 break;
         }
     }
+
+    public static function printLogo($input, $output)
+    {
+        $logoContent = file_get_contents('./assets/cigoadmin.txt');
+        Command::output($output, $logoContent);
+    }
 }
