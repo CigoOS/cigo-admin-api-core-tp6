@@ -5,7 +5,9 @@ namespace cigoadmin\command;
 use cigoadmin\library\utils\Command as UtilsCommand;
 use cigoadmin\library\utils\Env;
 use cigoadmin\library\utils\File;
+use Exception;
 use Inhere\Console\Util\Interact;
+use PDOException;
 use think\console\Command;
 use think\console\Input;
 use think\console\Output;
@@ -40,7 +42,7 @@ class Install extends Command
     }
     private function installExit(Output $output)
     {
-        UtilsCommand::output($output, PHP_EOL . '安装操作终止!!', 'highlight');
+        UtilsCommand::output($output, PHP_EOL . '安装操作终止!!' . PHP_EOL, 'highlight');
         exit(0);
     }
 
@@ -255,8 +257,7 @@ class Install extends Command
                 return;
             } else {
                 UtilsCommand::output($output, '.env 配置文件未删除，请手动删除后再执行后续install操作', 'warning');
-                UtilsCommand::output($output, PHP_EOL . '初始化操作终止!!', 'highlight');
-                exit(0);
+                $this->installExit($output);
             }
         }
         $output->info('.env 配置文件初始化完成 (✿^‿^✿)');
@@ -267,24 +268,88 @@ class Install extends Command
         $output->info(PHP_EOL . '+----------------------------------------------------------------------------+');
         $output->info('* 请输入数据库信息：' . PHP_EOL);
 
-        //数据库名
-        $database = Interact::readln('请输入数据库名称：');
+        // 获取用户数据数据库信息并检查
+        $dbInfo = $this->inputDbInfo($output);
+
+        // 确认数据库信息
+        $output->info(PHP_EOL . '您输入的数据库信息如下：');
+        $output->info('主机地址：' . $dbInfo['host']);
+        $output->info('端口：' . $dbInfo['port']);
+        $output->info('用户名：' . $dbInfo['username']);
+        $output->info('密码：' . $dbInfo['password']);
+        $output->info('数据库：' . $dbInfo['database']);
+        $output->info('表前缀：' . $dbInfo['prefix']);
+
+        // 检查数据库
+        $this->checkDb($dbInfo, $output);
+
+        return $dbInfo;
+    }
+
+    private function inputDbInfo($output)
+    {
+        $host = 'localhost';
+        $port = 3306;
         //数据库用户名
         $username = Interact::readln('请输入登录用户名：');
         //数据库密码
         $password = Interact::readln('请输入登录密码：');
+        //数据库名
+        $database = Interact::readln('请输入数据库名称：');
+        //数据表前缀
+        $prefix = Interact::readln('请输入表前缀：');
 
-        //确认数据库信息
-        $output->info(PHP_EOL . '您输入的数据库信息如下：');
-        $output->info('数据库：' . $database);
-        $output->info('用户名：' . $username);
-        $output->info('密码：' . $password);
+        // 连接数据库
+        $conn = null;
+        try {
+            $conn = new \PDO("mysql:host=" . $host . ";port=" . $port, $username, $password);
+        } catch (\Exception $e) {
+            UtilsCommand::output($output, PHP_EOL . '连接数据库失败!', 'error');
+            $confirm = Interact::readln(PHP_EOL . '重新输入数据库信息? (y/n)[默认:no]: ');
+            if (in_array($confirm, ['Y', 'y', 'yes'])) {
+                $output->info('');
+                return $this->inputDbInfo($input, $output);
+            } else {
+                $this->installExit($output);
+            }
+        }
 
         return [
-            'database' => $database,
+            'conn' => $conn,
+            'host' => $host,
+            'port' => $port,
             'username' => $username,
             'password' => $password,
+            'database' => $database,
+            'prefix' => $prefix,
         ];
+    }
+
+    private function checkDb($dbInfo, $output)
+    {
+        $output->info(PHP_EOL . '数据库连接成功，开始检查数据库是否存在...');
+        $dbTablesInfo = $dbInfo['conn']->prepare("SHOW TABLES FROM `" . $dbInfo['database'] . "`")->execute();
+
+        if ($dbTablesInfo) {
+            UtilsCommand::output($output, PHP_EOL . '数据库{' . $dbInfo['database'] . '}已经存在，请删除后重新操作!', 'error');
+            $this->installExit($output);
+        } else {
+            $createDb = false;
+            try {
+                $createDb = $dbInfo['conn']->prepare("CREATE DATABASE IF NOT EXISTS  `" . $dbInfo['database'] . "` /*!40100 DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci */ /*!80016 DEFAULT ENCRYPTION='N' */")->execute();
+            } catch (\Exception $e) {
+                UtilsCommand::output($output, PHP_EOL . '数据库{' . $dbInfo['database'] . '}创建失败!', 'error');
+                UtilsCommand::output($output, PHP_EOL . '失败原因：' . $e->getMessage(), 'error');
+                $this->installExit($output);
+            }
+            if (!$createDb) {
+                UtilsCommand::output($output, PHP_EOL . '数据库{' . $dbInfo['database'] . '}创建失败!', 'error');
+                UtilsCommand::output($output, PHP_EOL . '失败原因：未知', 'error');
+                $this->installExit($output);
+            }
+        }
+
+        $output->info('数据库{' . $dbInfo['database'] . '}创建成功 (✿^‿^✿)');
     }
 
     private function configEnv(Input $input, Output $output, array $args)
@@ -297,14 +362,16 @@ class Install extends Command
         if (file_exists($envFile)) {
             UtilsCommand::output($output, '.env配置文件未删除，请先执行初始化操作并选择删除.env配置文件，命令如下：', 'error');
             UtilsCommand::output($output, 'php think cigoadmin:init');
-            UtilsCommand::output($output, PHP_EOL . '安装操作终止!!', 'highlight');
-            exit(0);
+            $this->installExit($output);
         }
 
         $envIniData = parse_ini_file($envEgFile, true);
 
         //修改配置参数
+        $envIniData['DATABASE']['HOSTNAME'] = $args['host'];
+        $envIniData['DATABASE']['HOSTPORT'] = $args['port'];
         $envIniData['DATABASE']['DATABASE'] = $args['database'];
+        $envIniData['DATABASE']['PREFIX'] = $args['prefix'];
         $envIniData['DATABASE']['USERNAME'] = $args['username'];
         $envIniData['DATABASE']['PASSWORD'] = $args['password'];
 
@@ -318,7 +385,7 @@ class Install extends Command
     {
         // 确认是否安装
         $output->info(PHP_EOL . '+----------------------------------------------------------------------------+');
-        $output->info('* 开始安装数据库：' . PHP_EOL);
+        $output->info('* 开始安装数据库表：' . PHP_EOL);
         $confirm = Interact::readln('确认安装吗? (y/n)[默认:no]: ');
         if (in_array($confirm, ['Y', 'y', 'yes'])) {
             $output->info(PHP_EOL . '执行安装，请稍后...');
