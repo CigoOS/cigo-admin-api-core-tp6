@@ -5,9 +5,7 @@ namespace cigoadmin\command;
 use cigoadmin\library\utils\Command as UtilsCommand;
 use cigoadmin\library\utils\Env;
 use cigoadmin\library\utils\File;
-use Exception;
 use Inhere\Console\Util\Interact;
-use PDOException;
 use think\console\Command;
 use think\console\Input;
 use think\console\Output;
@@ -25,20 +23,20 @@ class Install extends Command
     public function execute(Input $input, Output $output)
     {
         // 打印logo
-        UtilsCommand::printLogo($input, $output);
+        UtilsCommand::printLogo($output);
 
         // 环境检查
-        $this->checkEnv($input, $output);
-        $this->chmodPath($input, $output);
-        $this->initEnvFile($input, $output);
+        $this->checkEnv($output);
+        $this->chmodPath($output);
+        $this->initEnvFile($output);
 
         // 开始安装
-        $args = $this->getArgs($input, $output);
-        $this->configEnv($input, $output, $args);
-        $this->installDb($input, $output, $args);
+        $args = $this->getArgs($output);
+        $this->configEnv($output, $args);
+        $this->installDb($output, $args);
 
         // 提示成功
-        $this->tipsSuccess($input, $output);
+        $this->tipsSuccess($output);
     }
     private function installExit(Output $output)
     {
@@ -46,7 +44,7 @@ class Install extends Command
         exit(0);
     }
 
-    private function checkEnv(Input $input, Output $output)
+    private function checkEnv(Output $output)
     {
         $output->info('* 检查环境配置：' . PHP_EOL);
 
@@ -208,20 +206,23 @@ class Install extends Command
         $output->info(PHP_EOL . '环境配置检测完成 (✿^‿^✿)');
     }
 
-    private function chmodPath(Input $input, Output $output)
+    private function chmodPath(Output $output)
     {
         $output->info(PHP_EOL . '+----------------------------------------------------------------------------+');
-        $output->info('* 检查目录并赋权限：' . PHP_EOL);
+        $output->info('* 检查目录及文件并赋权限：' . PHP_EOL);
 
-        //运行时目录
-        $runtimePathExit = file_exists('./runtime');
-        $runtimePathExit && shell_exec('chmod -R 777 ./runtime');
+        $output->info('* 检查文件是否存在：' . PHP_EOL);
+        //获取备份sql文件内容
+        if (!file_exists('./assets/sql/cigoadmin.sql')) {
+            UtilsCommand::output($output, PHP_EOL . '未找到数据库备份文件：./assets/sql/cigoadmin.sql', 'error');
+            $this->installExit($output);
+        }
         UtilsCommand::output(
             $output,
-            './runtime         :******: 0777 (' . ($runtimePathExit ? '完成)     √' : '不存在)   !'),
-            $runtimePathExit ? 'info' : 'comment'
+            './assets/sql/cigoadmin.sql                 (存在)   √'
         );
 
+        $output->info('* 检查目录权限：' . PHP_EOL);
         //assets目录
         $assetsPathExit = file_exists('./assets');
         $assetsPathExit && shell_exec('chmod -R 777 ./assets');
@@ -230,7 +231,22 @@ class Install extends Command
             './assets          :******: 0777 (' . ($assetsPathExit ? '完成)     √' : '不存在)   !'),
             $assetsPathExit ? 'info' : 'comment'
         );
-
+        //运行时目录
+        $runtimePathExit = file_exists('./runtime');
+        $runtimePathExit && shell_exec('chmod -R 777 ./runtime');
+        UtilsCommand::output(
+            $output,
+            './runtime         :******: 0777 (' . ($runtimePathExit ? '完成)     √' : '不存在)   !'),
+            $runtimePathExit ? 'info' : 'comment'
+        );
+        //assets目录
+        $assetsPathExit = file_exists('./assets');
+        $assetsPathExit && shell_exec('chmod -R 777 ./assets');
+        UtilsCommand::output(
+            $output,
+            './assets          :******: 0777 (' . ($assetsPathExit ? '完成)     √' : '不存在)   !'),
+            $assetsPathExit ? 'info' : 'comment'
+        );
         //本地上传目录
         $uploadPathExit = file_exists('./public/upload');
         $uploadPathExit && shell_exec('chmod -R 777 ./public/upload');
@@ -243,7 +259,7 @@ class Install extends Command
         $output->info(PHP_EOL . '目录赋权完成 (✿^‿^✿)');
     }
 
-    private function initEnvFile(Input $input, Output $output)
+    private function initEnvFile(Output $output)
     {
         $output->info(PHP_EOL . '+----------------------------------------------------------------------------+');
         $output->info('* 初始化 .env 配置文件：' . PHP_EOL);
@@ -263,7 +279,7 @@ class Install extends Command
         $output->info('.env 配置文件初始化完成 (✿^‿^✿)');
     }
 
-    private function getArgs(Input $input, Output $output)
+    private function getArgs(Output $output)
     {
         $output->info(PHP_EOL . '+----------------------------------------------------------------------------+');
         $output->info('* 请输入数据库信息：' . PHP_EOL);
@@ -308,7 +324,7 @@ class Install extends Command
             $confirm = Interact::readln(PHP_EOL . '重新输入数据库信息? (y/n)[默认:no]: ');
             if (in_array($confirm, ['Y', 'y', 'yes'])) {
                 $output->info('');
-                return $this->inputDbInfo($input, $output);
+                return $this->inputDbInfo($output);
             } else {
                 $this->installExit($output);
             }
@@ -352,7 +368,7 @@ class Install extends Command
         $output->info('数据库{' . $dbInfo['database'] . '}创建成功 (✿^‿^✿)');
     }
 
-    private function configEnv(Input $input, Output $output, array $args)
+    private function configEnv(Output $output, array $args)
     {
         $output->info(PHP_EOL . '+----------------------------------------------------------------------------+');
         $output->info('* 修改 .env 配置文件：' . PHP_EOL);
@@ -378,23 +394,154 @@ class Install extends Command
         $iniContent = Env::saveArrayToIni($envIniData, ['APP-MAP', 'DOMAIN-BIND']);
         file_put_contents($envFile, $iniContent);
 
-        $output->info('.env 修改完成');
+        $output->info('.env 修改完成 (✿^‿^✿)');
     }
 
-    private function installDb(Input $input, Output $output, array $args)
+    private function installDb(Output $output, array $args)
     {
         // 确认是否安装
         $output->info(PHP_EOL . '+----------------------------------------------------------------------------+');
         $output->info('* 开始安装数据库表：' . PHP_EOL);
         $confirm = Interact::readln('确认安装吗? (y/n)[默认:no]: ');
-        if (in_array($confirm, ['Y', 'y', 'yes'])) {
-            $output->info(PHP_EOL . '执行安装，请稍后...');
-        } else {
-            $output->info(PHP_EOL . '安装已取消');
+        if (!in_array($confirm, ['Y', 'y', 'yes'])) {
+            $this->installExit($output);
+        }
+
+        $output->info(PHP_EOL . '执行安装，请稍后...');
+        $this->createTables($output, $args);
+
+        $output->info(PHP_EOL . '数据库安装完成 (✿^‿^✿)');
+    }
+
+    private function createTables($output, $config)
+    {
+        //获取数据库连接
+        $conn  = $this->getDbConnect($output, $config);
+
+        //拆分备份数据库文件sql语句
+        $sqlList = $this->sqlSplit($output, $config);
+
+        //执行表安装
+        foreach ($sqlList as $key => $sqlRow) {
+            switch ($sqlRow['rowPrefix']) {
+                case  '-- ':
+                    $output->info($sqlRow['sql'] . PHP_EOL);
+                    break;
+                case '/*!':
+                    $this->excuteSql($conn, $output, '执行version SQL:', $sqlRow['sql']);
+                    break;
+                case  'DROP TABLE IF EXISTS':
+                    $this->excuteSql($conn, $output, '删除存在表:', $sqlRow['sql']);
+                    break;
+                case  'CREATE TABLE ':
+                    $this->excuteSql($conn, $output, '创建数据表:', $sqlRow['sql']);
+                    break;
+                case  'LOCK TABLES ':
+                    $this->excuteSql($conn, $output, '锁定数据表:', $sqlRow['sql']);
+                    break;
+                case  'UNLOCK TABLES':
+                    $this->excuteSql($conn, $output, '解锁数据表:', $sqlRow['sql']);
+                    break;
+                default:
+                    UtilsCommand::output($output, PHP_EOL . '创建数据表：未知sql行标识：' . $sqlRow['flag'], 'error');
+                    $this->installExit($output);
+                    break;
+            }
         }
     }
 
-    private function tipsSuccess($input, $output)
+    private function excuteSql($conn, $output, $logTip, $sql)
+    {
+        $output->info($logTip);
+        $output->info($sql);
+
+        try {
+            $conn->prepare($sql)->execute();
+        } catch (\PDOException $e) {
+            UtilsCommand::output($output, PHP_EOL . 'Sql执行错误：' . $e->getMessage(), 'error');
+            $this->installExit($output);
+        }
+        $output->info('success' . PHP_EOL);
+    }
+
+    private function sqlSplit($output, $config)
+    {
+        //获取备份sql文件内容
+        if (!file_exists('./assets/sql/cigoadmin.sql')) {
+            UtilsCommand::output($output, PHP_EOL . '未找到数据库备份文件：./assets/sql/cigoadmin.sql', 'error');
+            $this->installExit($output);
+        }
+        $sqlContent = trim(file_get_contents('./assets/sql/cigoadmin.sql'));
+        if (empty($sqlContent)) {
+            UtilsCommand::output($output, PHP_EOL . '数据库备份文件异常：内容为空', 'error');
+            $this->installExit($output);
+        }
+        //拆分sql
+        $sqlList = [];
+        $sqlSplitList = preg_split("/(^\s*$)/m", $sqlContent);
+        foreach ($sqlSplitList as $key => $item) {
+            $item = trim($item);
+            $itemList = preg_split("/(;\s*$)/m", $item);
+            foreach ($itemList as $keySub => $itemSub) {
+                $itemSub = trim($itemSub);
+                if (0 === strpos($itemSub, '-- ')) {
+                    $sqlList[] = [
+                        'rowPrefix' => '-- ',
+                        'sql' => $itemSub
+                    ];
+                } else if (0 === strpos($itemSub, '/*!')) {
+                    $sqlList[] = [
+                        'rowPrefix' => '/*!',
+                        'sql' => $itemSub . ';'
+                    ];
+                } else if (0 === strpos($itemSub, 'DROP TABLE IF EXISTS')) {
+                    $sqlList[] = [
+                        'rowPrefix' => 'DROP TABLE IF EXISTS',
+                        'sql' => $itemSub . ';'
+                    ];
+                } else if (0 === strpos($itemSub, 'CREATE TABLE ')) {
+                    $sqlList[] = [
+                        'rowPrefix' => 'CREATE TABLE ',
+                        'sql' => $itemSub . ';'
+                    ];
+                } else if (0 === strpos($itemSub, 'LOCK TABLES ')) {
+                    $sqlList[] = [
+                        'rowPrefix' => 'LOCK TABLES ',
+                        'sql' => $itemSub . ';'
+                    ];
+                } else if (0 === strpos($itemSub, 'UNLOCK TABLES')) {
+                    $sqlList[] = [
+                        'rowPrefix' => 'UNLOCK TABLES',
+                        'sql' => $itemSub . ';'
+                    ];
+                }
+            }
+        }
+        return  $sqlList;
+    }
+
+    private function getDbConnect($output, $config)
+    {
+        $dbHost = $config['host'];
+        $dbPort = $config['port'] ? $config['port'] : '3306';
+        $dbName = $config['database'];
+        $dbUser = $config['username'];
+        $dbPwd = $config['password'];
+        $conn = null;
+        try {
+            $conn = new \PDO("mysql:host=$dbHost;port=$dbPort;dbname=$dbName;", $dbUser, $dbPwd, [
+                \PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION,
+                \PDO::MYSQL_ATTR_INIT_COMMAND => 'SET NAMES utf8mb4'
+            ]);
+        } catch (\PDOException $e) {
+            UtilsCommand::output($output, PHP_EOL . '数据库{' . $dbName . '}连接失败!', 'error');
+            UtilsCommand::output($output, PHP_EOL . '失败原因：' . $e->getMessage(), 'error');
+            $this->installExit($output);
+        }
+        return $conn;
+    }
+
+    private function tipsSuccess($output)
     {
         $output->info(
             PHP_EOL .

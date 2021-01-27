@@ -31,7 +31,7 @@ class  Command
         }
     }
 
-    public static function printLogo($input, $output)
+    public static function printLogo($output)
     {
         $logoContent = file_get_contents('./assets/cigoadmin.txt');
         Command::output($output, $logoContent);
