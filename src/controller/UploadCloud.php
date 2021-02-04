@@ -32,11 +32,13 @@ trait UploadCloud
         $qiniuConfig = Config::get('cigoadmin.qiniu_cloud');
 
         if (!in_array(
-            $this->args['bucket'], [
-            env('qiniu-cloud.cdn-bucket-open', ''),
-            env('qiniu-cloud.cdn-bucket-img', ''),
-            env('qiniu-cloud.cdn-bucket-img', ''),
-        ])) {
+            $this->args['bucket'],
+            [
+                env('qiniu-cloud.cdn-bucket-open', ''),
+                env('qiniu-cloud.cdn-bucket-img', ''),
+                env('qiniu-cloud.cdn-bucket-img', ''),
+            ]
+        )) {
             return $this->makeApiReturn('存储空间不存在', [], ErrorCode::ClientError_ArgsWrong, HttpReponseCode::ClientError_BadRequest);
         }
         $auth = new Auth($qiniuConfig['AccessKey'], $qiniuConfig['SecretKey']);
@@ -65,13 +67,12 @@ trait UploadCloud
 
     private function getCdnDomain($bucket = '')
     {
-        empty($bucket) ? '' : false;
         $bucketDomain = array_search($bucket, [
-            'cdn_open_domain' => env('qiniu-cloud.cdn-bucket-open', 'cdn_open_domain'),
-            'cdn_img_domain' => env('qiniu-cloud.cdn-bucket-img', 'cdn_img_domain'),
-            'cdn_video_domain' => env('qiniu-cloud.cdn-bucket-img', 'cdn_video_domain'),
+            'cdn-open-domain' => env('qiniu-cloud.cdn-bucket-open', 'cdn-open-domain'),
+            'cdn-img-domain' => env('qiniu-cloud.cdn-bucket-img', 'cdn-img-domain'),
+            'cdn-video-domain' => env('qiniu-cloud.cdn-bucket-img', 'cdn-video-domain'),
         ]);
-        return Request::scheme().'://'. env('qiniu-cloud.' . $bucketDomain, $bucketDomain);
+        return Request::scheme() . '://' . env('qiniu-cloud.' . $bucketDomain, $bucketDomain);
     }
 
     /**
@@ -87,7 +88,7 @@ trait UploadCloud
         $qiniuConfig = Config::get('cigoadmin.qiniu_cloud');
         $auth = new Auth($qiniuConfig['AccessKey'], $qiniuConfig['SecretKey']);
         $authorization = $_SERVER['HTTP_AUTHORIZATION'];
-        $callbackBody = file_get_contents('php://input');//获取回调的body信息
+        $callbackBody = file_get_contents('php://input'); //获取回调的body信息
         $isQiniuCallback = $auth->verifyCallback($qiniuConfig['callbackBodyType'], $authorization, $qiniuConfig['callbackUrl'], $callbackBody);
         if (!$isQiniuCallback) {
             $this->args['isQiniuCallback'] = $isQiniuCallback;
@@ -112,8 +113,7 @@ trait UploadCloud
                     ? 'img'
                     : (in_array($ext, ['mp4', 'rmvb', 'mov'])
                         ? 'video'
-                        : 'file'
-                    );
+                        : 'file');
                 $file = Files::create([
                     'platform' => 'qiniu',
                     'platform_bucket' => $this->args['bucket'],
@@ -131,11 +131,11 @@ trait UploadCloud
             }
             // 生成访问防盗链链接
             $baseUrl = $this->getCdnDomain($this->args['bucket']) . '/' . $this->args['key'];
-            if (stripos($this->args['bucket'], '_open') !== false) {
+            if (stripos($this->args['bucket'], '_open') == false) {
                 // 私有空间中的防盗链外链
                 $baseUrl .= '?e=' . (time() + $qiniuConfig['tokenExpireTime']);
+                $signedUrl = $auth->privateDownloadUrl($baseUrl);
             }
-            $signedUrl = $auth->privateDownloadUrl($baseUrl);
 
             return $this->makeApiReturn('上传成功', [
                 'id' => $file->id,
@@ -174,22 +174,22 @@ trait UploadCloud
             return null;
         }
         switch ($info['platform']) {
-            case 'qiniu'://七牛云
+            case 'qiniu': //七牛云
                 {
                     // 生成访问防盗链链接
                     $qiniuConfig = Config::get('cigoadmin.qiniu_cloud');
                     $auth = new Auth($qiniuConfig['AccessKey'], $qiniuConfig['SecretKey']);
                     $baseUrl = $this->getCdnDomain($info['platform_bucket']) . '/' . $info['platform_key'];
-                    if (stripos($info['platform_bucket'], '_open') !== false) {
+                    if (stripos($info['platform_bucket'], '_open') == false) {
                         // 私有空间中的防盗链外链
                         $baseUrl .= '?e=' . (time() + $qiniuConfig['tokenExpireTime']);
+                        $info['signed_url'] = $auth->privateDownloadUrl($baseUrl);
                     }
-                    $info['signed_url'] = $auth->privateDownloadUrl($baseUrl);
                 }
                 break;
-            case 'tencent'://腾讯云
-            case 'aliyun'://阿里云
-            case 'local'://本地服务器
+            case 'tencent': //腾讯云
+            case 'aliyun': //阿里云
+            case 'local': //本地服务器
             default:
                 break;
         }
