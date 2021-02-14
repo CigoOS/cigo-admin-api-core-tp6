@@ -12,7 +12,7 @@ use think\Response;
 /**
  * 检查权限
  *
- * Class ApiCheckAuth
+ * Class ApiCheckLoginUser
  * @package cigoadmin\middleware
  */
 class ApiCheckLoginUser

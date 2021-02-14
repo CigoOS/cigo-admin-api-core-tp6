@@ -57,7 +57,7 @@ trait Manager
         //检测密码
         if ($admin->password !== Encrypt::encrypt($this->args['password'])) {
             return $this->makeApiReturn('密码错误', [
-//                'password'=>Encrypt::encrypt('123456')
+                //                'password'=>Encrypt::encrypt('123456')
             ], ErrorCode::ClientError_AuthError, HttpReponseCode::ClientError_Forbidden);
         }
 
@@ -75,7 +75,7 @@ trait Manager
         Cache::set('user_token_' . $this->moduleName . '_' . $token, $admin->id, 7 * 24 * 60 * 60);
 
         //记录登录信息
-        $this->args['password'] = isset($this->args['password']) ? Encrypt::encrypt($this->args['password']) : '';//避免客户密码泄露
+        $this->args['password'] = isset($this->args['password']) ? Encrypt::encrypt($this->args['password']) : ''; //避免客户密码泄露
         UserLoginRecord::recordSuccess($admin->id, $this->args);
 
         return $this->makeApiReturn('登录成功', $admin->hidden(['password']), ErrorCode::OK, HttpReponseCode::Success_OK);
@@ -270,4 +270,3 @@ trait Manager
         return $this->makeApiReturn('修改成功', $manager);
     }
 }
-

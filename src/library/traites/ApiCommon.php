@@ -19,42 +19,42 @@ trait ApiCommon
      *
      * @param string $msg
      * @param array $data
-     * @param int $errorcode
-     * @param int $httpcode
+     * @param int $errorCode
+     * @param int $httpCode
      * @return false|string
      */
-    protected function makeApiReturn($msg = "ok", $data = [], $errorcode = 0, $httpcode = 200)
+    protected function makeApiReturn($msg = "ok", $data = [], $errorCode = 0, $httpCode = 200)
     {
         $msg_data = [
             "msg" => $msg,
             "data" => $data,
-            "error_code" => $errorcode
+            "error_code" => $errorCode
         ];
-        return json($msg_data, $httpcode);
+        return json($msg_data, $httpCode);
     }
 
     /**
      * @param string $msg
      * @param array $data
-     * @param int $errorcode
-     * @param int $httpcode
+     * @param int $errorCode
+     * @param int $httpCode
      * @return false|string
      */
-    protected function error($msg = "", $data = [], $errorcode = ErrorCode::ClientError_ArgsWrong, $httpcode = HttpReponseCode::ClientError_BadRequest)
+    protected function error($msg = "", $data = [], $errorCode = ErrorCode::ClientError_ArgsWrong, $httpCode = HttpReponseCode::ClientError_BadRequest)
     {
-        return $this->makeApiReturn($msg, $data, $errorcode, $httpcode);
+        return $this->makeApiReturn($msg, $data, $errorCode, $httpCode);
     }
 
     /**
      * @param string $msg
      * @param array $data
-     * @param int $errorcode
-     * @param int $httpcode
+     * @param int $errorCode
+     * @param int $httpCode
      * @return false|string
      */
-    protected function success($msg = "", $data = [], $errorcode = ErrorCode::OK, $httpcode = HttpReponseCode::Success_OK)
+    protected function success($msg = "", $data = [], $errorCode = ErrorCode::OK, $httpCode = HttpReponseCode::Success_OK)
     {
-        return $this->makeApiReturn($msg, $data, $errorcode, $httpcode);
+        return $this->makeApiReturn($msg, $data, $errorCode, $httpCode);
     }
 
     protected function makeStatusTips($disableTips = '禁用成功', $successTips = '启用成功', $deleteTips = '删除成功')

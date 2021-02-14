@@ -1,5 +1,6 @@
 <?php
-declare (strict_types=1);
+
+declare(strict_types=1);
 
 namespace cigoadmin\library\traites;
 
@@ -36,11 +37,10 @@ trait CheckArgs
             return;
         }
 
-        if (empty($this->request->header("Cigo-Timestamp")) ||
-            intval($this->request->header("Cigo-Timestamp")) <= 1 ||
-            strlen($this->request->header("Cigo-Timestamp")) !== 10) {
+        if (empty($this->request->header("Cigo-Timestamp")) || intval($this->request->header("Cigo-Timestamp")) <= 1) {
             abort($this->makeApiReturn(
-                "时间戳错误", [],
+                "时间戳错误",
+                [],
                 ErrorCode::ApiCheck_TimeStampError,
                 HttpReponseCode::ClientError_BadRequest
             ));
@@ -48,7 +48,8 @@ trait CheckArgs
 
         if (abs(time() - intval($this->request->header("Cigo-Timestamp"))) > 60) {
             abort($this->makeApiReturn(
-                "请求无效", [],
+                "请求无效",
+                [],
                 ErrorCode::ApiCheck_TimeStampError,
                 HttpReponseCode::ClientError_BadRequest
             ));
@@ -66,7 +67,8 @@ trait CheckArgs
 
         if ($this->request->header("Cigo-Sign") == null) {
             abort($this->makeApiReturn(
-                "请提供参数签名", [],
+                "请提供参数签名",
+                [],
                 ErrorCode::ApiCheck_SignError,
                 HttpReponseCode::ClientError_BadRequest
             ));
@@ -76,7 +78,8 @@ trait CheckArgs
 
         if ($this->request->header("Cigo-Sign") != $sign) {
             abort($this->makeApiReturn(
-                "签名错误", [],
+                "签名错误",
+                [],
                 ErrorCode::ApiCheck_SignError,
                 HttpReponseCode::ClientError_BadRequest
             ));
@@ -100,6 +103,6 @@ trait CheckArgs
         unset($sign_data['version']);
         ksort($sign_data);
         $sign_data_str = http_build_query($sign_data);
-        return md5($sign_data_str);
+        return strtoupper(md5($sign_data_str));
     }
 }

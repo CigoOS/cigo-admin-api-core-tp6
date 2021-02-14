@@ -130,11 +130,10 @@ trait UploadCloud
                 ]);
             }
             // 生成访问防盗链链接
-            $baseUrl = $this->getCdnDomain($this->args['bucket']) . '/' . $this->args['key'];
+            $signedUrl = $this->getCdnDomain($this->args['bucket']) . '/' . $this->args['key'];
             if (stripos($this->args['bucket'], '_open') == false) {
                 // 私有空间中的防盗链外链
-                $baseUrl .= '?e=' . (time() + $qiniuConfig['tokenExpireTime']);
-                $signedUrl = $auth->privateDownloadUrl($baseUrl);
+                $signedUrl = $auth->privateDownloadUrl($signedUrl, time() + $qiniuConfig['tokenExpireTime']);
             }
 
             return $this->makeApiReturn('上传成功', [
@@ -143,7 +142,7 @@ trait UploadCloud
                 'platform_bucket' => $file->platform_bucket,
                 'platform_key' => $file->platform_key,
                 'name' => $file->name,
-                'prefix' => $file->name,
+                'prefix' => $file->prefix,
                 'ext' => $file->ext,
                 'mime' => $file->mime,
                 'hash' => $file->hash,
@@ -179,12 +178,13 @@ trait UploadCloud
                     // 生成访问防盗链链接
                     $qiniuConfig = Config::get('cigoadmin.qiniu_cloud');
                     $auth = new Auth($qiniuConfig['AccessKey'], $qiniuConfig['SecretKey']);
-                    $baseUrl = $this->getCdnDomain($info['platform_bucket']) . '/' . $info['platform_key'];
+                    $signedUrl = $this->getCdnDomain($info['platform_bucket']) . '/' . $info['platform_key'];
                     if (stripos($info['platform_bucket'], '_open') == false) {
                         // 私有空间中的防盗链外链
-                        $baseUrl .= '?e=' . (time() + $qiniuConfig['tokenExpireTime']);
-                        $info['signed_url'] = $auth->privateDownloadUrl($baseUrl);
+                        $signedUrl = $auth->privateDownloadUrl($signedUrl, time() + $qiniuConfig['tokenExpireTime']);
                     }
+
+                    $info['signed_url'] = $signedUrl;
                 }
                 break;
             case 'tencent': //腾讯云

@@ -35,7 +35,8 @@ class ApiBaseValidate extends Validate
             }
             if (!$abortFlag) return;
             abort($this->makeApiReturn(
-                $this->getError(), [],
+                $this->getError(),
+                [],
                 ErrorCode::ClientError_ArgsWrong,
                 HttpReponseCode::ClientError_BadRequest
             ));
