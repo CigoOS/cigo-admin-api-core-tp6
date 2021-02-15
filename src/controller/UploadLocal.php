@@ -16,7 +16,7 @@ trait UploadLocal
     /**
      * 文件上传
      */
-    private function upload()
+    private function localUpload()
     {
         //1. 实例化上传类，并创建文件上传实例
         $upMg = new UploadMg();
