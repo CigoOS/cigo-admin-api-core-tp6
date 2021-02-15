@@ -16,7 +16,7 @@ trait Tree
         foreach ($srcDataList as $key => $item) {
             //判断当前层级
             if (isset($item[$pidKey]) && $item[$pidKey] == $pid) {
-                //判断分组
+                //处理分组
                 if ($checkGroup && isset($item['group']) && !empty($item['group'])) {
                     if ($groupName != $item['group']) {
                         $groupItemIndex = count($treeList);
@@ -32,11 +32,11 @@ trait Tree
                         $treeList[$groupItemIndex]['subItemEnableNum'] += $item['status'] == 1 ? 1 : 0;
                     }
                 }
-
+                // 处理当前项
                 $subList = array();
                 $this->convertToTree($srcDataList, $subList, $item['id'], $pidKey, $checkGroup);
                 if (!empty($subList)) {
-                    $item['subList'] = $subList;
+                    $item['sub_list'] = $subList;
                 }
 
                 $treeList[] = $item;
