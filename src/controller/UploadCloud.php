@@ -32,12 +32,7 @@ trait UploadCloud
         if (!isset($this->args['bucketType']) ||  !in_array($this->args['bucketType'], ['img', 'video', 'open'])) {
             return $this->makeApiReturn('存储空间不存在', [], ErrorCode::ClientError_ArgsWrong, HttpReponseCode::ClientError_BadRequest);
         }
-        $bucket = [
-            "open" => env('qiniu-cloud.cdn-bucket-open', 'open'),
-            "img" => env('qiniu-cloud.cdn-bucket-img', 'img'),
-            "video" => env('qiniu-cloud.cdn-bucket-video', 'video'),
-        ][$this->args['bucketType']];
-
+        $bucket = $qiniuConfig['bucketList'][$this->args['bucketType']];
         $auth = new Auth($qiniuConfig['AccessKey'], $qiniuConfig['SecretKey']);
         $policy = $qiniuConfig['enableCallbackServer']
             ? [
@@ -62,16 +57,6 @@ trait UploadCloud
             'platform' => env('cigo-admin.file-save-type', 'cloudQiniu'),
             'upload_host' => $qiniuConfig['host']
         ]);
-    }
-
-    private function getCloudQiniuCdnDomain($bucket = '')
-    {
-        $bucketDomain = array_search($bucket, [
-            'cdn-open-domain' => env('qiniu-cloud.cdn-bucket-open', 'cdn-open-domain'),
-            'cdn-img-domain' => env('qiniu-cloud.cdn-bucket-img', 'cdn-img-domain'),
-            'cdn-video-domain' => env('qiniu-cloud.cdn-bucket-video', 'cdn-video-domain'),
-        ]);
-        return Request::scheme() . '://' . env('qiniu-cloud.' . $bucketDomain, $bucketDomain);
     }
 
     /**
@@ -169,19 +154,6 @@ trait UploadCloud
     }
 
     /**
-     * 获取腾讯云cdn域名
-     */
-    private function getCloudTencentCdnDomain($bucket = '')
-    {
-        $bucketDomain = array_search($bucket, [
-            'cdn-open-domain' => env('qiniu-cloud.cdn-bucket-open', 'cdn-open-domain'),
-            'cdn-img-domain' => env('qiniu-cloud.cdn-bucket-img', 'cdn-img-domain'),
-            'cdn-video-domain' => env('qiniu-cloud.cdn-bucket-video', 'cdn-video-domain'),
-        ]);
-        return Request::scheme() . '://' . env('qiniu-cloud.' . $bucketDomain, $bucketDomain);
-    }
-
-    /**
      * 腾讯云文件上传通知
      */
     private function cloudTencentNotify()
@@ -201,19 +173,6 @@ trait UploadCloud
             'token' => "tencent-token",
             'upload_host' => "tencent-host"
         ]);
-    }
-
-    /**
-     * 获取腾讯云cdn域名
-     */
-    private function getCloudAliyunCdnDomain($bucket = '')
-    {
-        $bucketDomain = array_search($bucket, [
-            'cdn-open-domain' => env('qiniu-cloud.cdn-bucket-open', 'cdn-open-domain'),
-            'cdn-img-domain' => env('qiniu-cloud.cdn-bucket-img', 'cdn-img-domain'),
-            'cdn-video-domain' => env('qiniu-cloud.cdn-bucket-video', 'cdn-video-domain'),
-        ]);
-        return Request::scheme() . '://' . env('qiniu-cloud.' . $bucketDomain, $bucketDomain);
     }
 
     /**
@@ -257,12 +216,12 @@ trait UploadCloud
         // 生成访问防盗链链接
         $qiniuConfig = Config::get('cigoadmin.qiniu_cloud');
         $auth = new Auth($qiniuConfig['AccessKey'], $qiniuConfig['SecretKey']);
-        $signedUrl = $this->getCloudQiniuCdnDomain($bucket) . '/' . $key;
+        $bucketDomain = array_search($bucket, $qiniuConfig['domainLinkBucket']);
+        $signedUrl = Request::scheme() . '://' . $qiniuConfig['domainList'][$bucketDomain] . '/' . $key;
         if (stripos($bucket, '_open') == false) {
             // 私有空间中的防盗链外链
             $signedUrl = $auth->privateDownloadUrl($signedUrl, time() + $qiniuConfig['tokenExpireTime']);
         }
-
         $info['signed_url'] = $signedUrl;
     }
 }
