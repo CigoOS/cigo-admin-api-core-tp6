@@ -7,6 +7,7 @@ use cigoadmin\library\HttpReponseCode;
 use cigoadmin\library\traites\ApiCommon;
 use cigoadmin\model\Files;
 use Qiniu\Auth;
+use Qcloud\Cos\Client;
 use think\facade\Config;
 use think\facade\Log;
 use think\facade\Request;
@@ -47,7 +48,7 @@ trait UploadCloud
         $token = $auth->uploadToken(
             $bucket,
             null,
-            $qiniuConfig['tokenExpireTime'],
+            $qiniuConfig['tokenDuration'],
             $policy,
             true
         );
@@ -147,10 +148,18 @@ trait UploadCloud
      */
     private function makeCloudTencentToken()
     {
-        return $this->makeApiReturn('测试腾讯云存储', [
-            'token' => "tencent-token",
-            'upload_host' => "tencent-host"
-        ]);
+        //检查参数
+        $tencentConfig = Config::get('cigoadmin.tencent_cloud');
+        $cosClient = new Client(
+            array(
+                'region' => $tencentConfig['region'],
+                'schema' => Request::scheme(), //协议头部，默认为http
+                'credentials' => array(
+                    'secretId'  => $tencentConfig['SecretId'],
+                    'secretKey' => $tencentConfig['SecretKey']
+                )
+            )
+        );
     }
 
     /**
@@ -220,7 +229,7 @@ trait UploadCloud
         $signedUrl = Request::scheme() . '://' . $qiniuConfig['domainList'][$bucketDomain] . '/' . $key;
         if (stripos($bucket, '_open') == false) {
             // 私有空间中的防盗链外链
-            $signedUrl = $auth->privateDownloadUrl($signedUrl, time() + $qiniuConfig['tokenExpireTime']);
+            $signedUrl = $auth->privateDownloadUrl($signedUrl, time() + $qiniuConfig['linkTimeout']);
         }
         $info['signed_url'] = $signedUrl;
     }
