@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace cigoadmin\model;
 
-use cigoadmin\controller\UploadCloud;
+use cigoadmin\controller\FileUpload;
 use think\Model;
 
 /**
@@ -12,13 +12,13 @@ use think\Model;
  */
 class News  extends Model
 {
-    use UploadCloud;
+    use FileUpload;
 
     protected $table = 'cg_news';
 
     public function getImgInfoAttr($value, $data)
     {
-        return $this->getFileInfo($data);
+        return $this->getFileInfo($data['img']);
     }
 
     public function getNumViewShowAttr($value, $data)
@@ -26,7 +26,6 @@ class News  extends Model
         return UserView::where([
             ['content_type', '=', 'news'],
             ['content_id', '=', $data['id']],
-        ])
-            ->count() + $data['num_view'];
+        ])->count() + $data['num_view'];
     }
 }

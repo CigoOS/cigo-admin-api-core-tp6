@@ -3,7 +3,7 @@ declare (strict_types=1);
 
 namespace cigoadmin\model;
 
-use cigoadmin\controller\UploadCloud;
+use cigoadmin\controller\FileUpload;
 use Qiniu\Auth;
 use think\facade\Config;
 use think\Model;
@@ -15,7 +15,7 @@ use think\Model;
  */
 class User extends Model
 {
-    use UploadCloud;
+    use FileUpload;
 
     protected $table = 'cg_user';
 

@@ -6,19 +6,19 @@ use cigoadmin\library\ErrorCode;
 use cigoadmin\library\HttpReponseCode;
 use cigoadmin\library\traites\ApiCommon;
 use cigoadmin\library\uploader\tencent\Sts;
+use cigoadmin\library\uploader\UploadMg;
 use cigoadmin\model\Files;
 use Qiniu\Auth;
 use Qcloud\Cos\Client;
 use think\facade\Config;
-use think\facade\Log;
 use think\facade\Request;
 use think\Model;
 
 /**
- * Trait UploadCloud
+ * Trait FileUpload
  * @package cigoadmin\controller
  */
-trait UploadCloud
+trait FileUpload
 {
     use ApiCommon;
 
@@ -42,6 +42,21 @@ trait UploadCloud
                 break;
         }
         return $res;
+    }
+
+    /******************************= 七牛云：开始 =**********************************/
+
+    /**
+     * 文件上传
+     */
+    private function localUpload()
+    {
+        //1. 实例化上传类，并创建文件上传实例
+        $upMg = new UploadMg();
+        $upMg->init()->makeFileUploader();
+
+        //2. 执行上传操作
+        $upMg->doUpload();
     }
 
     /******************************= 七牛云：开始 =**********************************/
@@ -151,21 +166,21 @@ trait UploadCloud
                 'callbackBody' => $callbackBody
             ];
             // 补充文件信息：生成访问防盗链链接
-            $this->appendFileInfoCloudQiniu($fileInfo, $this->args['bucket'], $this->args['key']);
+            $this->appendFileInfoCloudQiniu($fileInfo);
             return $this->makeApiReturn('上传成功', $fileInfo);
         } catch (\Exception $exception) {
             return $this->makeApiReturn($exception->getMessage(), json_encode($exception), JSON_UNESCAPED_UNICODE);
         }
     }
 
-    private function appendFileInfoCloudQiniu(&$info = [], $bucket = "", $key = "")
+    private function appendFileInfoCloudQiniu(&$info = [])
     {
         // 生成访问防盗链链接
         $qiniuConfig = Config::get('cigoadmin.qiniu_cloud');
         $auth = new Auth($qiniuConfig['AccessKey'], $qiniuConfig['SecretKey']);
-        $bucketDomain = array_search($bucket, $qiniuConfig['domainLinkBucket']);
-        $signedUrl = Request::scheme() . '://' . $qiniuConfig['domainList'][$bucketDomain] . '/' . $key;
-        if (stripos($bucket, '_open') == false) {
+        $bucketDomain = array_search($info['platform_bucket'], $qiniuConfig['domainLinkBucket']);
+        $signedUrl = Request::scheme() . '://' . $qiniuConfig['domainList'][$bucketDomain] . '/' . $info['platform_key'];
+        if (stripos($info['platform_bucket'], '_open') == false) {
             // 私有空间中的防盗链外链
             $signedUrl = $auth->privateDownloadUrl($signedUrl, $qiniuConfig['linkTimeout']);
         }
@@ -267,7 +282,7 @@ trait UploadCloud
             ];
 
             // 补充文件信息：生成访问防盗链链接
-            $this->appendFileInfoCloudTencent($fileInfo, $this->args['bucket'], $this->args['key']);
+            $this->appendFileInfoCloudTencent($fileInfo);
 
             return $this->makeApiReturn('上传成功', $fileInfo);
         } catch (\Exception $exception) {
@@ -275,7 +290,7 @@ trait UploadCloud
         }
     }
 
-    private function appendFileInfoCloudTencent(&$info = [], $bucket = "", $key = "")
+    private function appendFileInfoCloudTencent(&$info = [])
     {
         // 生成访问防盗链链接
         $tencentConfig = Config::get('cigoadmin.tencent_cloud');
@@ -289,12 +304,12 @@ trait UploadCloud
         ];
         $cosClient = new Client($config);
         try {
-            $signedUrl = $cosClient->getObjectUrl($bucket, $key, $tencentConfig['linkTimeout']);
+            $signedUrl = $cosClient->getObjectUrl($info['platform_bucket'], $info['platform_key'], $tencentConfig['linkTimeout']);
         } catch (\Exception $e) {
             $info['signed_url'] = "加签失败，请检查";
             return;
         }
-        $bucketDomain = array_search($bucket, $tencentConfig['domainLinkBucket']);
+        $bucketDomain = array_search($info['platform_bucket'], $tencentConfig['domainLinkBucket']);
         $info['signed_url'] = $tencentConfig['cdnScheme'] . '://' . $tencentConfig['domainList'][$bucketDomain] . '/' . substr($signedUrl, strripos($signedUrl, '.com/') + 5);
     }
 
@@ -337,10 +352,10 @@ trait UploadCloud
         }
         switch ($info['platform']) {
             case 'qiniu': //七牛云
-                $this->appendFileInfoCloudQiniu($info, $info['platform_bucket'], $info['platform_key']);
+                $this->appendFileInfoCloudQiniu($info);
                 break;
             case 'tencent': //腾讯云
-                $this->appendFileInfoCloudTencent($info, $info['platform_bucket'], $info['platform_key']);
+                $this->appendFileInfoCloudTencent($info);
                 break;
             case 'aliyun': //阿里云
             case 'local': //本地服务器

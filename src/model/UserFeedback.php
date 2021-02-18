@@ -1,9 +1,10 @@
 <?php
-declare (strict_types=1);
+
+declare(strict_types=1);
 
 namespace cigoadmin\model;
 
-use cigoadmin\controller\UploadCloud;
+use cigoadmin\controller\FileUpload;
 use think\Model;
 
 /**
@@ -15,7 +16,7 @@ class UserFeedback extends Model
 {
     protected $table = 'cg_user_feedback';
 
-    use UploadCloud;
+    use FileUpload;
 
     public function getImgMultiInfoAttr($value, $data)
     {
