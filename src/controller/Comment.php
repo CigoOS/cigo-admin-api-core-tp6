@@ -30,9 +30,9 @@ trait Comment
             'create_time' => time()
         ];
         switch ($this->args['mode']) {
-            case 1://回复评论
+            case 1: //回复评论
                 {
-                    $commentData = CommentModel::where('id', $this->args['target_id'])->findOrEmpty();
+                    $commentData = (new CommentModel())->where('id', $this->args['target_id'])->findOrEmpty();
                     if ($commentData->isEmpty()) {
                         return $this->makeApiReturn('被回复评论不存在', [], ErrorCode::ClientError_ArgsWrong, HttpReponseCode::ClientError_BadRequest);
                     }
@@ -45,9 +45,9 @@ trait Comment
                     $model = new CommentInteraction();
                 }
                 break;
-            case 2://回复交互
+            case 2: //回复交互
                 {
-                    $interactionData = CommentInteraction::where('id', $this->args['target_id'])->findOrEmpty();
+                    $interactionData = (new CommentInteraction())->where('id', $this->args['target_id'])->findOrEmpty();
                     if ($interactionData->isEmpty()) {
                         return $this->makeApiReturn('被回复交互不存在', [], ErrorCode::ClientError_ArgsWrong, HttpReponseCode::ClientError_BadRequest);
                     }
@@ -61,7 +61,7 @@ trait Comment
                     $model = new CommentInteraction();
                 }
                 break;
-            case 0://评论内容
+            case 0: //评论内容
             default:
                 $model = new CommentModel();
                 $addData['content_type'] = $this->args['type'];
@@ -95,7 +95,7 @@ trait Comment
             ['status', '=', 1],
         ];
 
-        $model = CommentModel::where($map);
+        $model = (new CommentModel())->where($map);
         $count = $model->count();
         if (!empty($this->args['page']) && !empty($this->args['pageSize'])) {
             $model->page(intval($this->args['page']), intval($this->args['pageSize']));
@@ -104,7 +104,7 @@ trait Comment
         return $this->makeApiReturn('获取成功', [
             'count' => $count,
             'dataList' =>
-                $dataList->isEmpty() ? [] : $dataList
+            $dataList->isEmpty() ? [] : $dataList
         ]);
     }
 
@@ -116,7 +116,7 @@ trait Comment
             return $this->makeApiReturn('请提供评论编号', [], ErrorCode::ClientError_ArgsWrong, HttpReponseCode::ClientError_BadRequest);
         }
 
-        $comment = CommentModel::where('id', $this->args['comment_id'])->findOrEmpty();
+        $comment = (new CommentModel())->where('id', $this->args['comment_id'])->findOrEmpty();
         if ($comment->isEmpty()) {
             return $this->makeApiReturn('回复评论不存在', [], ErrorCode::ClientError_ArgsWrong, HttpReponseCode::ClientError_BadRequest);
         }
@@ -126,13 +126,13 @@ trait Comment
             ['status', '=', 1],
         ];
 
-        $model = CommentInteraction::where($map);
+        $model = (new CommentInteraction())->where($map);
         $count = $model->count();
         if (!empty($this->args['page']) && !empty($this->args['pageSize'])) {
             $model->page(intval($this->args['page']), intval($this->args['pageSize']));
         }
         $dataList = $model->order('id desc')->withAttr('comment_info', function ($value, $data) {
-            $res = CommentModel::where('id', $data['comment_id'])->visible(['id', 'comment'])->findOrEmpty();
+            $res = (new CommentModel())->where('id', $data['comment_id'])->visible(['id', 'comment'])->findOrEmpty();
             return $res->isEmpty() ? null : $res;
         })
             ->append(['comment_info', 'user_info', 'target_user_info', 'is_like', 'is_report'])
@@ -143,4 +143,3 @@ trait Comment
         ]);
     }
 }
-

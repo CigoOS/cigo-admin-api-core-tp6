@@ -1,12 +1,11 @@
 <?php
-
-declare(strict_types=1);
+declare (strict_types=1);
 
 namespace cigoadmin\validate;
 
 use cigoadmin\library\ApiBaseValidate;
 
-class EditManager extends ApiBaseValidate
+class ModifyPwdByPwd extends ApiBaseValidate
 {
     /**
      * 定义验证规则
@@ -15,9 +14,8 @@ class EditManager extends ApiBaseValidate
      * @var array
      */
     protected $rule = [
-        'id' => 'require:number',
-        'role_flag' => 'in:2,4',
-        'email' => 'email',
+        'old' => 'require',
+        'new' => 'require|min:6|max:20',
     ];
 
     /**
@@ -27,9 +25,9 @@ class EditManager extends ApiBaseValidate
      * @var array
      */
     protected $message = [
-        'id.require' => '未提供管理员编号',
-        'id.number' => '管理员编号错误',
-        'role_flag.in' => '管理员类型错误',
-        'email.email' => '邮箱格式错误',
+        'old.require' => '请提供原密码',
+        'new.require' => '请提供新密码',
+        'new.min' => '密码最少4位',
+        'new.max' => '密码最多20位',
     ];
 }

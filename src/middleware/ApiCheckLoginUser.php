@@ -1,5 +1,6 @@
 <?php
-declare (strict_types=1);
+
+declare(strict_types=1);
 
 namespace cigoadmin\middleware;
 
@@ -30,7 +31,7 @@ class ApiCheckLoginUser
     {
         $request->token = $request->header('Cigo-Token');
         if (!empty($request->token)) {
-            $userInfo = User::where([
+            $userInfo = (new User())->where([
                 ['token', '=', $request->token],
                 ['status', '=', 1]
             ])->findOrEmpty();

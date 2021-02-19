@@ -1,5 +1,6 @@
 <?php
-declare (strict_types=1);
+
+declare(strict_types=1);
 
 namespace cigoadmin\model;
 
@@ -35,15 +36,15 @@ class User extends Model
 
     public function getShowNameAttr($value, $data)
     {
-        if(!empty($data['realname'])){
+        if (!empty($data['realname'])) {
             return $data['realname'];
-        }else if (!empty($data['nickname'])){
+        } else if (!empty($data['nickname'])) {
             return $data['nickname'];
-        }else if (!empty($data['username'])){
+        } else if (!empty($data['username'])) {
             return $data['username'];
-        }else if (!empty($data['phone'])){
+        } else if (!empty($data['phone'])) {
             return $data['phone'];
-        }else{
+        } else {
             return '***';
         }
     }
@@ -51,7 +52,7 @@ class User extends Model
     public function getAuthGroupInfoAttr($value, $data)
     {
         $ids = json_decode($data['auth_group'], true);
-        $groups = UserMgAuthGroup::where('id', 'in', $ids)->select();
+        $groups = (new UserMgAuthGroup())->where('id', 'in', $ids)->select();
         return $groups->isEmpty() ? [] : $groups->visible(['id', 'title']);
     }
 

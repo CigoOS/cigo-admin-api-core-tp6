@@ -16,6 +16,7 @@ use cigoadmin\validate\PhoneCheck;
 use cigoadmin\validate\SmsCodeCheck;
 use cigoadmin\validate\Status;
 use think\facade\Cache;
+use think\facade\Request;
 
 /**
  * Trait Manager
@@ -33,7 +34,7 @@ trait User
         (new AddUser())->runCheck();
 
         //检查用户名是否存在
-        $dataCheck = UserModel::where([
+        $dataCheck = (new UserModel())->where([
             ['username|phone', '=', $this->args['username']],
             ['status', '<>', -1],
         ])->findOrEmpty();
@@ -41,7 +42,7 @@ trait User
             return $this->makeApiReturn('账号已存在', [], ErrorCode::ClientError_ArgsWrong, HttpReponseCode::ClientError_BadRequest);
         }
         //检查手机号是否存在
-        $dataCheck = UserModel::where([
+        $dataCheck = (new UserModel())->where([
             ['username|phone', '=', $this->args['phone']],
             ['status', '<>', -1],
         ])->findOrEmpty();
@@ -62,7 +63,7 @@ trait User
                 Db::commit();
             }
         }
-        $user = UserModel::where('id', $user->id)->append(['show_name', 'img_info'])->find();
+        $user = (new UserModel())->where('id', $user->id)->append(['show_name', 'img_info'])->find();
         return $this->makeApiReturn('添加成功', $user->hidden(['token', 'token_create_time', 'password']));
     }
 
@@ -75,13 +76,13 @@ trait User
         (new EditUser())->runCheck();
 
         //检查用户是否存在
-        $user = UserModel::where('id', $this->args['id'])->findOrEmpty();
+        $user = (new UserModel())->where('id', $this->args['id'])->findOrEmpty();
         if ($user->isEmpty()) {
             return $this->makeApiReturn('用户不存在', ['id' => $this->args['id']], ErrorCode::ClientError_ArgsWrong, HttpReponseCode::ClientError_BadRequest);
         }
         //检查用户名是否存在
         if (!empty($this->args['username'])) {
-            $dataCheck = UserModel::where([
+            $dataCheck = (new UserModel())->where([
                 ['username|phone', '=', $this->args['username']],
                 ['status', '<>', -1],
             ])->findOrEmpty();
@@ -91,7 +92,7 @@ trait User
         }
         //检查手机号是否存在
         if (!empty($this->args['phone'])) {
-            $dataCheck = UserModel::where([
+            $dataCheck = (new UserModel())->where([
                 ['username|phone', '=', $this->args['phone']],
                 ['status', '<>', -1],
             ])->findOrEmpty();
@@ -115,7 +116,7 @@ trait User
             }
         }
 
-        $user = UserModel::where('id', $user->id)->append(['show_name', 'img_info'])->find();
+        $user = (new UserModel())->where('id', $user->id)->append(['show_name', 'img_info'])->find();
         return $this->makeApiReturn('修改成功', $user->hidden(['token', 'token_create_time', 'password']));
     }
 
@@ -127,7 +128,7 @@ trait User
         (new Status())->runCheck();
 
         //检查用户是否存在
-        $user = UserModel::where('id', $this->args['id'])->findOrEmpty();
+        $user = (new UserModel())->where('id', $this->args['id'])->findOrEmpty();
         if ($user->isEmpty() || $user->status == -1) {
             return $this->makeApiReturn('用户不存在', ['id' => $this->args['id']], ErrorCode::ClientError_ArgsWrong, HttpReponseCode::ClientError_BadRequest);
         }
@@ -171,7 +172,7 @@ trait User
         $dataList = $model
             ->order('User.id desc')
             ->hidden(['token', 'token_create_time', 'password'])
-            ->append(['show_name','img_info'])
+            ->append(['show_name', 'img_info'])
             ->select();
         return $this->makeApiReturn('获取成功', [
             'count' => $count,
@@ -190,7 +191,7 @@ trait User
         (new LoginByPwd())->runCheck();
 
         //检查用户是否存在
-        $user = UserModel::where([
+        $user = (new UserModel())->where([
             ['username|phone', '=', $this->args['username']],
             ['module', '=', $this->args['module']],
         ])->append(['img_info'])->findOrEmpty();
@@ -226,7 +227,7 @@ trait User
         Cache::set('user_token_' . $this->moduleName . '_' . $token, $user->id, 7 * 24 * 60 * 60);
 
         //记录登录信息
-        $this->args['password'] = isset($this->args['password']) ? Encrypt::encrypt($this->args['password']) : '';//避免客户密码泄露
+        $this->args['password'] = isset($this->args['password']) ? Encrypt::encrypt($this->args['password']) : ''; //避免客户密码泄露
         UserLoginRecord::recordSuccess($user->id, $this->args);
 
         return $this->makeApiReturn('登录成功', $user->hidden(['password']), ErrorCode::OK, HttpReponseCode::Success_OK);
@@ -246,7 +247,7 @@ trait User
 
         //TODO 考虑将模块检查改为数组形式
         //检查用户是否存在
-        $user = UserModel::where([
+        $user = (new UserModel())->where([
             ['phone', '=', $this->args['phone']],
             ['module', 'like', '%' . $this->moduleName . '%'],
         ])->append(['show_name', 'img_info'])->findOrEmpty();
@@ -263,7 +264,7 @@ trait User
                 'status' => 1,
                 'create_time' => time()
             ]);
-            $user = UserModel::where('id', $user->id)->append(['img_info'])->findOrEmpty();
+            $user = (new UserModel())->where('id', $user->id)->append(['img_info'])->findOrEmpty();
             if ($user->isEmpty()) {
                 return $this->makeApiReturn('用户自动创建失败', [], ErrorCode::ServerError_DB_ERROR, HttpReponseCode::ServerError_InternalServer_Error);
             }
@@ -301,7 +302,7 @@ trait User
         (new ModifyProfile())->runCheck();
 
         //检查用户是否存在
-        $user = UserModel::where([
+        $user = (new UserModel())->where([
             ['id', '=', $this->args['id']],
             ['module', '=', $this->moduleName],
         ])->append(['img_info'])->findOrEmpty();
@@ -346,7 +347,7 @@ trait User
     protected function doLogout()
     {
         //检查用户是否存在
-        $user = UserModel::where('token', Request::instance()->header('cigo-token'))->findOrEmpty();
+        $user = (new UserModel())->where('token', Request::instance()->header('cigo-token'))->findOrEmpty();
         if (!$user->isEmpty()) {
             $token = $user->token;
             $user->token = '';
@@ -361,7 +362,7 @@ trait User
     protected function modifyPhoneByPwd()
     {
         //检查用户是否存在
-        $user = UserModel::where('id', Request::instance()->userInfo->id)->findOrEmpty();
+        $user = (new UserModel())->where('id', Request::instance()->userInfo->id)->findOrEmpty();
         if ($user->isEmpty()) {
             return $this->makeApiReturn('用户不存在', [], ErrorCode::ClientError_AuthError, HttpReponseCode::ClientError_Forbidden);
         }
@@ -378,7 +379,7 @@ trait User
             return $this->makeApiReturn('无效操作状态', [], ErrorCode::ClientError_AuthError, HttpReponseCode::ClientError_Forbidden);
         }
         (new PhoneCheck())->runCheck();
-        $checkPhone = UserModel::where('phone', $this->args['phone'])->findOrEmpty();
+        $checkPhone = (new UserModel())->where('phone', $this->args['phone'])->findOrEmpty();
         if (!$checkPhone->isEmpty()) {
             return $this->makeApiReturn('新手机号被占用', [], ErrorCode::ClientError_ArgsWrong, HttpReponseCode::ClientError_BadRequest);
         }
@@ -402,7 +403,7 @@ trait User
             return $this->makeApiReturn('新密码不能与原密码相同', [], ErrorCode::ClientError_AuthError, HttpReponseCode::ClientError_Forbidden);
         }
         //检查用户是否存在
-        $user = UserModel::where('id', Request::instance()->userInfo->id)->findOrEmpty();
+        $user = (new UserModel())->where('id', Request::instance()->userInfo->id)->findOrEmpty();
         if ($user->isEmpty()) {
             return $this->makeApiReturn('用户不存在', [], ErrorCode::ClientError_AuthError, HttpReponseCode::ClientError_Forbidden);
         }
@@ -436,7 +437,7 @@ trait User
         (new SmsCodeCheck())->runCheck();
 
         //检查用户是否存在
-        $user = UserModel::where('phone', $this->args['phone'])->findOrEmpty();
+        $user = (new UserModel())->where('phone', $this->args['phone'])->findOrEmpty();
         if ($user->isEmpty()) {
             return $this->makeApiReturn('账号不存在', [], ErrorCode::ClientError_AuthError, HttpReponseCode::ClientError_Forbidden);
         }
@@ -462,7 +463,7 @@ trait User
         (new PhoneCheck())->runCheck();
         (new SmsCodeCheck())->runCheck();
         //检查用户是否存在
-        $user = UserModel::where('phone', $this->args['phone'])->findOrEmpty();
+        $user = (new UserModel())->where('phone', $this->args['phone'])->findOrEmpty();
         if ($user->isEmpty()) {
             return $this->makeApiReturn('账号不存在', [], ErrorCode::ClientError_AuthError, HttpReponseCode::ClientError_Forbidden);
         }
@@ -471,7 +472,7 @@ trait User
             return $this->makeApiReturn('无效操作状态', [], ErrorCode::ClientError_AuthError, HttpReponseCode::ClientError_Forbidden);
         }
         //查看是否本人操作
-        if ($user->id != Request::instance()->userInfo->id) {//TODO 检查所有使用的地方
+        if ($user->id != Request::instance()->userInfo->id) { //TODO 检查所有使用的地方
             return $this->makeApiReturn('非本人操作被禁止', [], ErrorCode::ClientError_AuthError, HttpReponseCode::ClientError_Forbidden);
         }
         $token = $user->token;
@@ -483,6 +484,4 @@ trait User
 
         return $this->makeApiReturn('注销成功');
     }
-
 }
-

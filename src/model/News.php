@@ -23,7 +23,7 @@ class News  extends Model
 
     public function getNumViewShowAttr($value, $data)
     {
-        return UserView::where([
+        return (new UserView())->where([
             ['content_type', '=', 'news'],
             ['content_id', '=', $data['id']],
         ])->count() + $data['num_view'];

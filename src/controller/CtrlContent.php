@@ -139,7 +139,7 @@ trait CtrlContent
             ];
             switch ($data['content_type']) {
                 case 'news':
-                    $model = News::where($map);
+                    $model = (new News())->where($map);
                     $append = ['img_info', 'num_view_show'];
                     $hidden = [];
                     break;
@@ -155,12 +155,12 @@ trait CtrlContent
             ];
             switch ($data['content_type']) {
                 case 'comment':
-                    $model = Comment::where($map);
+                    $model = (new Comment())->where($map);
                     $append = ['user_info', 'first_page_interaction', 'is_like', 'is_report'];
                     $hidden = [];
                     break;
                 case 'interaction':
-                    $model = CommentInteraction::where($map);
+                    $model = (new CommentInteraction())->where($map);
                     $append = ['user_info', 'first_page_interaction', 'is_like', 'is_report'];
                     $hidden = [];
                     break;
@@ -168,7 +168,7 @@ trait CtrlContent
                     return null;
             }
             $data = $model->withAttr('user_info', function ($value, $data) {
-                $userInfo = User::where('id', $data['user_id'])->append(['img_info'])->visible(['id', 'nickname', 'realname', 'phone', 'img_info'])->findOrEmpty();
+                $userInfo = (new User())->where('id', $data['user_id'])->append(['img_info'])->visible(['id', 'nickname', 'realname', 'phone', 'img_info'])->findOrEmpty();
                 return $userInfo->isEmpty() ? null : $userInfo;
             })
                 ->append($append)

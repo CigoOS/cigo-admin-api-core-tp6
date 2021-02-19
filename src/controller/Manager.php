@@ -12,8 +12,10 @@ use cigoadmin\validate\AddManager;
 use cigoadmin\validate\EditManager;
 use cigoadmin\validate\ListPage;
 use cigoadmin\validate\LoginByPwd;
+use cigoadmin\validate\ModifyPwdByPwd;
 use cigoadmin\validate\Status;
 use think\facade\Cache;
+use think\facade\Request;
 
 /**
  * Trait Manager
@@ -38,7 +40,7 @@ trait Manager
         }
 
         //检查管理员是否存在
-        $admin = User::where([
+        $admin = (new User())->where([
             ['username|phone', '=', $this->args['username']],
             ['module', '=', $this->args['module']],
         ])->append(['show_name', 'img_info'])->findOrEmpty();
@@ -89,7 +91,7 @@ trait Manager
         (new AddManager())->runCheck();
 
         //检查用户名是否存在
-        $dataCheck = User::where([
+        $dataCheck = (new User())->where([
             ['username|phone', '=', $this->args['username']],
             ['status', '<>', -1],
         ])->findOrEmpty();
@@ -98,7 +100,7 @@ trait Manager
         }
         //检查手机号是否存在
         if (!empty($this->args['phone'])) {
-            $dataCheck = User::where([
+            $dataCheck = (new User())->where([
                 ['username|phone', '=', $this->args['phone']],
                 ['status', '<>', -1],
             ])->findOrEmpty();
@@ -111,12 +113,12 @@ trait Manager
         empty($this->args['module']) ? $this->args['module'] = 'admin' : false;
         isset($this->args['password']) ? $this->args['password'] = Encrypt::encrypt($this->args['password']) : false;
         isset($this->args['auth_group'])
-            ? $this->args['auth_group'] = empty($this->args['auth_group']) ? '[]' : json_encode($this->args['auth_group'], JSON_UNESCAPED_UNICODE)
+            ? $this->args['auth_group'] = empty($this->args['auth_group']) ? '[]' : $this->args['auth_group']
             : false;
         $this->args['create_time'] = time();
 
         $manager = User::create($this->args);
-        $manager = User::where('id', $manager->id)->append(['show_name', 'img_info'])->find();
+        $manager = (new User())->where('id', $manager->id)->append(['show_name', 'img_info'])->find();
         return $this->makeApiReturn('添加成功', $manager->hidden(['token', 'token_create_time', 'password']));
     }
 
@@ -128,26 +130,26 @@ trait Manager
         (new EditManager())->runCheck();
 
         //检查管理员是否存在
-        $manager = User::where('id', $this->args['id'])->findOrEmpty();
+        $manager = (new User())->where('id', $this->args['id'])->findOrEmpty();
         if ($manager->isEmpty()) {
             return $this->makeApiReturn('管理员不存在', ['id' => $this->args['id']], ErrorCode::ClientError_ArgsWrong, HttpReponseCode::ClientError_BadRequest);
         }
         //检查用户名是否存在
         if (!empty($this->args['username'])) {
-            $dataCheck = User::where([
+            $dataCheck = (new User())->where([
                 ['username|phone', '=', $this->args['username']],
-                ['status', '<>', -1],
+                ['module', '=', $this->moduleName]
             ])->findOrEmpty();
 
             if (!$dataCheck->isEmpty() && $dataCheck->id != $this->args['id']) {
-                return $this->makeApiReturn('账号已存在', [], ErrorCode::ClientError_ArgsWrong, HttpReponseCode::ClientError_BadRequest);
+                return $this->makeApiReturn('用户名被占用', [], ErrorCode::ClientError_ArgsWrong, HttpReponseCode::ClientError_BadRequest);
             }
         }
         //检查手机号是否存在
         if (!empty($this->args['phone'])) {
-            $dataCheck = User::where([
+            $dataCheck = (new User())->where([
                 ['username|phone', '=', $this->args['phone']],
-                ['status', '<>', -1],
+                ['module', '=', $this->moduleName]
             ])->findOrEmpty();
 
             if (!$dataCheck->isEmpty() && $dataCheck->id != $this->args['id']) {
@@ -160,11 +162,11 @@ trait Manager
         }
         isset($this->args['password']) ? $this->args['password'] = Encrypt::encrypt($this->args['password']) : false;
         isset($this->args['auth_group'])
-            ? $this->args['auth_group'] = empty($this->args['auth_group']) ? '[]' : json_encode($this->args['auth_group'], JSON_UNESCAPED_UNICODE)
+            ? $this->args['auth_group'] = empty($this->args['auth_group']) ? '[]' : $this->args['auth_group']
             : false;
         $this->args['update_time'] = time();
         $manager = User::update($this->args);
-        $manager = User::where('id', $manager->id)->append(['show_name', 'img_info'])->find();
+        $manager = (new User())->where('id', $manager->id)->append(['show_name', 'img_info'])->find();
         return $this->makeApiReturn('修改成功', $manager->hidden(['token', 'token_create_time', 'password']));
     }
 
@@ -175,7 +177,7 @@ trait Manager
             return $this->makeApiReturn('新密码不能与原密码相同', [], ErrorCode::ClientError_AuthError, HttpReponseCode::ClientError_Forbidden);
         }
         //检查用户是否存在
-        $user = User::where('id', Request::instance()->userInfo->id)->findOrEmpty();
+        $user = (new User())->where('id', Request::instance()->userInfo->id)->findOrEmpty();
         if ($user->isEmpty()) {
             return $this->makeApiReturn('账户不存在', [], ErrorCode::ClientError_AuthError, HttpReponseCode::ClientError_Forbidden);
         }
@@ -210,7 +212,7 @@ trait Manager
         (new Status())->runCheck();
 
         //检查管理员是否存在
-        $manager = User::where('id', $this->args['id'])->findOrEmpty();
+        $manager = (new User())->where('id', $this->args['id'])->findOrEmpty();
         if ($manager->isEmpty() || $manager->status == -1) {
             return $this->makeApiReturn('管理员不存在', ['id' => $this->args['id']], ErrorCode::ClientError_ArgsWrong, HttpReponseCode::ClientError_BadRequest);
         }
@@ -241,7 +243,7 @@ trait Manager
             $map[] = ['nickname|phone|realname|username', 'like', '%' . $this->args['keywords'] . '%'];
         }
 
-        $model = User::where($map)->hidden(['token', 'token_create_time', 'password']);
+        $model = (new User())->where($map)->hidden(['token', 'token_create_time', 'password']);
         $count = $model->count();
         if (!empty($this->args['page']) && !empty($this->args['pageSize'])) {
             $model->page(intval($this->args['page']), intval($this->args['pageSize']));
@@ -263,7 +265,7 @@ trait Manager
             return $this->makeApiReturn('请提供管理员编号', [], ErrorCode::ClientError_ArgsWrong, HttpReponseCode::ClientError_BadRequest);
         }
         //检查管理员是否存在
-        $manager = User::where('id', $this->args['id'])->append(['show_name', 'img_info', 'auth_group_info'])->hidden(['token', 'token_create_time', 'password'])->findOrEmpty();
+        $manager = (new User())->where('id', $this->args['id'])->append(['show_name', 'img_info', 'auth_group_info'])->hidden(['token', 'token_create_time', 'password'])->findOrEmpty();
         if ($manager->isEmpty()) {
             return $this->makeApiReturn('管理员不存在', ['id' => $this->args['id']], ErrorCode::ClientError_ArgsWrong, HttpReponseCode::ClientError_BadRequest);
         }

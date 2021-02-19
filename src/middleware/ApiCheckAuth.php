@@ -1,5 +1,6 @@
 <?php
-declare (strict_types=1);
+
+declare(strict_types=1);
 
 namespace cigoadmin\middleware;
 
@@ -34,19 +35,21 @@ class ApiCheckAuth
         $request->token = $request->header('Cigo-Token');
         if (empty($request->token)) {
             abort($this->makeApiReturn(
-                '请登录并提供token', [],
+                '请登录并提供token',
+                [],
                 ErrorCode::ClientError_TokenError,
                 HttpReponseCode::ClientError_Unauthorized
             ));
         }
-//        halt($this->moduleName); //TODO 检查管理员模块不允许普通用户登录
-        $userInfo = User::where([
+        //        halt($this->moduleName); //TODO 检查管理员模块不允许普通用户登录
+        $userInfo = (new User())->where([
             ['token', '=', $request->token],
             ['status', '=', 1]
         ])->findOrEmpty();
         if ($userInfo->isEmpty()) {
             abort($this->makeApiReturn(
-                '无此用户或禁用', ['token' => $request->token],
+                '无此用户或禁用',
+                ['token' => $request->token],
                 ErrorCode::ClientError_TokenError,
                 HttpReponseCode::ClientError_BadRequest
             ));

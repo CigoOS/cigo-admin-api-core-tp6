@@ -1,5 +1,6 @@
 <?php
-declare (strict_types=1);
+
+declare(strict_types=1);
 
 namespace cigoadmin\validate;
 
@@ -18,7 +19,6 @@ class AddManager extends ApiBaseValidate
         'username' => 'require',
         'password' => 'require',
         'email' => 'require|email',
-        'auth_group' => 'array',
     ];
 
     /**
@@ -34,6 +34,5 @@ class AddManager extends ApiBaseValidate
         'password.require' => '请提供密码',
         'email.require' => '请提供邮箱',
         'email.email' => '邮箱格式错误',
-        'auth_group.array' => '角色格式错误',
     ];
 }

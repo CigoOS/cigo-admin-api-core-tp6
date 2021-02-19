@@ -50,7 +50,8 @@ abstract class Uploader
         //1. 检查大小限制
         if (($this->maxSize == 0) || ($file["size"] > $this->maxSize)) {
             abort($this->makeApiReturn(
-                '文件大小超出限制(' . ($this->maxSize / 1024 / 1024) . 'M)', [],
+                '文件大小超出限制(' . ($this->maxSize / 1024 / 1024) . 'M)',
+                [],
                 ErrorCode::ClientError_ArgsWrong,
                 HttpReponseCode::ClientError_BadRequest
             ));
@@ -58,7 +59,8 @@ abstract class Uploader
         //2. 检查文件后缀
         if (!$this->exts || !count($this->exts) || !in_array(strtolower($file['ext']), $this->exts)) {
             abort($this->makeApiReturn(
-                "上传文件后缀错误", [],
+                "上传文件后缀错误",
+                [],
                 ErrorCode::ClientError_ArgsWrong,
                 HttpReponseCode::ClientError_BadRequest
             ));
@@ -103,14 +105,15 @@ abstract class Uploader
             $file['root_path'] = $configs['rootPath'];
             $file['sub_path'] = $this->getSubPath();
 
-            $file['saved_path'] = $file['root_path'] . '/' . $file['sub_path'];//TODO 注意路径'./',避免linux造成'./'和'/'歧义
+            $file['saved_path'] = $file['root_path'] . '/' . $file['sub_path']; //TODO 注意路径'./',避免linux造成'./'和'/'歧义
             $file['saved_name'] = $this->getSaveFileName();
             $file['saved_path_name'] = $file['saved_path'] . '/' . $file['saved_name'] . '.' . $file['ext'];
 
             //检查是否允许覆盖
             if (!$configs['replace'] && is_file($file['saved_path_name'])) {
                 abort($this->makeApiReturn(
-                    "保存文件重名，请重新尝试", [],
+                    "保存文件重名，请重新尝试",
+                    [],
                     ErrorCode::ClientError_ArgsWrong,
                     HttpReponseCode::ClientError_BadRequest
                 ));
@@ -124,7 +127,8 @@ abstract class Uploader
 
         if (!move_uploaded_file($file['tmp_name'], $file['saved_path_name'])) {
             abort($this->makeApiReturn(
-                "上传文件保存错误", [],
+                "上传文件保存错误",
+                [],
                 ErrorCode::ServerError_PATH_AUTH,
                 HttpReponseCode::ServerError_InternalServer_Error
             ));
@@ -136,7 +140,8 @@ abstract class Uploader
         if (is_dir($path)) {
             if (!is_writable($path)) {
                 abort($this->makeApiReturn(
-                    "上传目录不可写", [],
+                    "上传目录不可写",
+                    [],
                     ErrorCode::ServerError_PATH_AUTH,
                     HttpReponseCode::ServerError_InternalServer_Error
                 ));
@@ -145,7 +150,8 @@ abstract class Uploader
         }
         if (!mkdir($path, 0777, true)) {
             abort($this->makeApiReturn(
-                '目录 {' . $path . '} 创建失败！！', [],
+                '目录 {' . $path . '} 创建失败！！',
+                [],
                 ErrorCode::ServerError_PATH_AUTH,
                 HttpReponseCode::ServerError_InternalServer_Error
             ));
@@ -157,7 +163,8 @@ abstract class Uploader
         /* 检测目录是否可写 */
         if (!is_writable($path)) {
             abort($this->makeApiReturn(
-                '上传目录{' . $path . '}不可写！', [],
+                '上传目录{' . $path . '}不可写！',
+                [],
                 ErrorCode::ServerError_PATH_AUTH,
                 HttpReponseCode::ServerError_InternalServer_Error
             ));
@@ -188,10 +195,10 @@ abstract class Uploader
                 $fileModel = Files::create($data);
                 $file['id'] = intval($fileModel->id);
             }
-
         } catch (\Exception $exception) {
             abort($this->makeApiReturn(
-                "保存数据库失败", [],
+                "保存数据库失败",
+                [],
                 ErrorCode::ServerError_DB_ERROR,
                 HttpReponseCode::ServerError_InternalServer_Error
             ));
@@ -201,7 +208,7 @@ abstract class Uploader
 
     private function getUploadFileInDB(&$file)
     {
-        return Files::where(array('md5' => $file['md5'], 'sha1' => $file['sha1']))->find();
+        return (new Files())->where(array('md5' => $file['md5'], 'sha1' => $file['sha1']))->find();
     }
 
     protected function getSaveFileName()
@@ -227,7 +234,8 @@ abstract class Uploader
     protected function ctrlUploadFile($args, $file, $configs)
     {
         abort($this->makeApiReturn(
-            "上传上传成功", $this->getResponseFileInfo($file),
+            "上传上传成功",
+            $this->getResponseFileInfo($file),
             ErrorCode::OK,
             HttpReponseCode::Success_OK
         ));
