@@ -1,5 +1,6 @@
 <?php
-declare (strict_types=1);
+
+declare(strict_types=1);
 
 namespace cigoadmin\validate;
 
@@ -15,7 +16,6 @@ class EditAuthGroup extends ApiBaseValidate
      */
     protected $rule = [
         'id' => 'require',
-        'rules' => 'array',
     ];
 
     /**
@@ -26,6 +26,5 @@ class EditAuthGroup extends ApiBaseValidate
      */
     protected $message = [
         'id.require' => '未提供编号',
-        'rules.array' => 'rules格式错误',
     ];
 }

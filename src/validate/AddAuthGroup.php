@@ -1,5 +1,6 @@
 <?php
-declare (strict_types=1);
+
+declare(strict_types=1);
 
 namespace cigoadmin\validate;
 
@@ -17,7 +18,7 @@ class AddAuthGroup extends ApiBaseValidate
         'title' => 'require',
         'pid' => 'require',
         'path' => 'require',
-        'rules' => 'require|array',
+        'rules' => 'require',
     ];
 
     /**
@@ -31,6 +32,5 @@ class AddAuthGroup extends ApiBaseValidate
         'pid.require' => '未提供pid',
         'path.require' => '未提供path',
         'rules.require' => '未提供rules',
-        'rules.array' => 'rules格式错误',
     ];
 }
