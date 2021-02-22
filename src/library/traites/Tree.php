@@ -23,13 +23,13 @@ trait Tree
                         $treeList[] = array(
                             'group_flag' => true,
                             'title' => $item['group'],
-                            'subItemNum' => 1,
-                            'subItemEnableNum' => $item['status'] == 1 ? 1 : 0,
+                            'sub_item_num' => 1,
+                            'sub_item_enable_num' => $item['status'] == 1 ? 1 : 0,
                         );
                         $groupName = $item['group'];
                     } else {
-                        $treeList[$groupItemIndex]['subItemNum']++;
-                        $treeList[$groupItemIndex]['subItemEnableNum'] += $item['status'] == 1 ? 1 : 0;
+                        $treeList[$groupItemIndex]['sub_item_num']++;
+                        $treeList[$groupItemIndex]['sub_item_enable_num'] += $item['status'] == 1 ? 1 : 0;
                     }
                 }
                 // 处理当前项
