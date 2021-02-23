@@ -24,11 +24,6 @@ class User extends Model
     const  ROLE_FLAGS_COMMON_ADMIN = 2;
     const  ROLE_FLAGS_MAIN_ADMIN = 4;
 
-    public function getAuthGroupAttr($value, $data)
-    {
-        return json_decode($data['auth_group'], true);
-    }
-
     public function getUsernameAttr($value, $data)
     {
         return empty($data['username']) ? $data['phone'] : $data['username'];

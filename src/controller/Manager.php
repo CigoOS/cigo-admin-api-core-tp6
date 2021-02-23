@@ -112,9 +112,7 @@ trait Manager
         //添加管理员
         empty($this->args['module']) ? $this->args['module'] = 'admin' : false;
         isset($this->args['password']) ? $this->args['password'] = Encrypt::encrypt($this->args['password']) : false;
-        isset($this->args['auth_group'])
-            ? $this->args['auth_group'] = empty($this->args['auth_group']) ? '[]' : $this->args['auth_group']
-            : false;
+        empty($this->args['auth_group']) ? $this->args['auth_group'] = '[]' : false;
         $this->args['create_time'] = time();
 
         $manager = User::create($this->args);
@@ -161,9 +159,9 @@ trait Manager
             unset($this->args['module']);
         }
         isset($this->args['password']) ? $this->args['password'] = Encrypt::encrypt($this->args['password']) : false;
-        isset($this->args['auth_group'])
-            ? $this->args['auth_group'] = empty($this->args['auth_group']) ? '[]' : $this->args['auth_group']
-            : false;
+        if (isset($this->args['auth_group']) && empty($this->args['auth_group'])) {
+            unset($this->args['auth_group']);
+        }
         $this->args['update_time'] = time();
         $manager = User::update($this->args);
         $manager = (new User())->where('id', $manager->id)->append(['show_name', 'img_info'])->find();
