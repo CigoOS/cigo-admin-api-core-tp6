@@ -16,6 +16,7 @@ use cigoadmin\validate\PhoneCheck;
 use cigoadmin\validate\SmsCodeCheck;
 use cigoadmin\validate\Status;
 use think\facade\Cache;
+use think\facade\Db;
 use think\facade\Request;
 
 /**
@@ -36,7 +37,7 @@ trait User
         //检查用户名是否存在
         $dataCheck = (new UserModel())->where([
             ['username|phone', '=', $this->args['username']],
-            ['status', '<>', -1],
+            ['module', '=', 'client'],
         ])->findOrEmpty();
         if (!$dataCheck->isEmpty()) {
             return $this->makeApiReturn('账号已存在', [], ErrorCode::ClientError_ArgsWrong, HttpReponseCode::ClientError_BadRequest);
@@ -44,7 +45,15 @@ trait User
         //检查手机号是否存在
         $dataCheck = (new UserModel())->where([
             ['username|phone', '=', $this->args['phone']],
-            ['status', '<>', -1],
+            ['module', '=', 'client'],
+        ])->findOrEmpty();
+        if (!$dataCheck->isEmpty()) {
+            return $this->makeApiReturn('手机号已存在', [], ErrorCode::ClientError_ArgsWrong, HttpReponseCode::ClientError_BadRequest);
+        }
+        //检查邮箱是否存在
+        $dataCheck = (new UserModel())->where([
+            ['email', '=', $this->args['email']],
+            ['module', '=', 'client'],
         ])->findOrEmpty();
         if (!$dataCheck->isEmpty()) {
             return $this->makeApiReturn('手机号已存在', [], ErrorCode::ClientError_ArgsWrong, HttpReponseCode::ClientError_BadRequest);
@@ -59,10 +68,9 @@ trait User
         Db::startTrans();
         $user = UserModel::create($this->args);
         if ($afterAdd) {
-            if ($afterAdd($user)) {
-                Db::commit();
-            }
+            $afterAdd($user);
         }
+        Db::commit();
         $user = (new UserModel())->where('id', $user->id)->append(['show_name', 'img_info'])->find();
         return $this->makeApiReturn('添加成功', $user->hidden(['token', 'token_create_time', 'password']));
     }
@@ -84,7 +92,7 @@ trait User
         if (!empty($this->args['username'])) {
             $dataCheck = (new UserModel())->where([
                 ['username|phone', '=', $this->args['username']],
-                ['status', '<>', -1],
+                ['module', '=', 'client'],
             ])->findOrEmpty();
             if (!$dataCheck->isEmpty() && $dataCheck->id != $this->args['id']) {
                 return $this->makeApiReturn('账号已存在', [], ErrorCode::ClientError_ArgsWrong, HttpReponseCode::ClientError_BadRequest);
@@ -94,10 +102,20 @@ trait User
         if (!empty($this->args['phone'])) {
             $dataCheck = (new UserModel())->where([
                 ['username|phone', '=', $this->args['phone']],
-                ['status', '<>', -1],
+                ['module', '=', 'client'],
             ])->findOrEmpty();
             if (!$dataCheck->isEmpty() && $dataCheck->id != $this->args['id']) {
                 return $this->makeApiReturn('手机号已存在', [], ErrorCode::ClientError_ArgsWrong, HttpReponseCode::ClientError_BadRequest);
+            }
+        }
+        //检查邮箱是否存在
+        if (!empty($this->args['email'])) {
+            $dataCheck = (new UserModel())->where([
+                ['email', '=', $this->args['email']],
+                ['module', '=', 'client'],
+            ])->findOrEmpty();
+            if (!$dataCheck->isEmpty() && $dataCheck->id != $this->args['id']) {
+                return $this->makeApiReturn('邮箱已存在', [], ErrorCode::ClientError_ArgsWrong, HttpReponseCode::ClientError_BadRequest);
             }
         }
 
@@ -111,10 +129,9 @@ trait User
         Db::startTrans();
         $user = UserModel::update($this->args);
         if ($afterEdit) {
-            if ($afterEdit($user)) {
-                Db::commit();
-            }
+            $afterEdit($user);
         }
+        Db::commit();
 
         $user = (new UserModel())->where('id', $user->id)->append(['show_name', 'img_info'])->find();
         return $this->makeApiReturn('修改成功', $user->hidden(['token', 'token_create_time', 'password']));
